@@ -6,25 +6,46 @@ import session from 'express-session';
 import connectRedis from 'connect-redis';
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
+import { __prod__ } from './constants';
+import { ContextType } from './types';
+
+declare module 'express-session' {
+  interface Session {
+    userId: string;
+  }
+}
 
 const main = async () => {
-  const schema = await getSchema();
-  const server = new ApolloServer({ schema });
-
   const app = express();
-
-  await server.start();
 
   const RedisStore = connectRedis(session);
   const redisClient = redis.createClient();
   app.use(
     session({
-      store: new RedisStore({ client: redisClient }),
+      name: 'qid',
+      store: new RedisStore({
+        client: redisClient,
+        disableTouch: true,
+      }),
+      cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.SECURE_COOKIE ? true : false || __prod__,
+      },
       saveUninitialized: false,
       secret: 'keyboard cat',
       resave: false,
     })
   );
+
+  const schema = await getSchema();
+  const server = new ApolloServer({
+    schema,
+    context: ({ req, res }): ContextType => ({ req, res }),
+  });
+
+  await server.start();
 
   server.applyMiddleware({ app });
 

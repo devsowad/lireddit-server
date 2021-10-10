@@ -1,7 +1,16 @@
-import { Mutation, Resolver, InputType, Arg, Field } from 'type-graphql';
+import {
+  Mutation,
+  Resolver,
+  InputType,
+  Arg,
+  Field,
+  Ctx,
+  Query,
+} from 'type-graphql';
 import bcrypt from 'bcrypt';
-import { UserInputError } from 'apollo-server-errors';
 import { User, UserModel } from '../model/User';
+import { AuthenticationError, UserInputError } from 'apollo-server-errors';
+import { ContextType } from '../types';
 
 @InputType()
 class RegisterInput {
@@ -13,6 +22,17 @@ class RegisterInput {
 
 @Resolver()
 export class UserResolver {
+  @Query(() => User)
+  async me(@Ctx() { req }: ContextType) {
+    console.log(req.session);
+    const userId = req.session.userId;
+    if (userId) {
+      const user = UserModel.findById(userId);
+      if (user) return user;
+    }
+    throw new AuthenticationError('Unauthorized');
+  }
+
   @Mutation(() => User)
   async register(@Arg('input') input: RegisterInput): Promise<User> {
     const { username, password } = input;
@@ -25,12 +45,16 @@ export class UserResolver {
   }
 
   @Mutation(() => User)
-  async login(@Arg('input') input: RegisterInput): Promise<User> {
+  async login(
+    @Arg('input') input: RegisterInput,
+    @Ctx() { req }: ContextType
+  ): Promise<User> {
     const { username, password } = input;
     const user = await UserModel.findOne({ username });
     if (user) {
       const validPassword = await bcrypt.compare(password, user.password);
       if (validPassword) {
+        req.session.userId = user.id;
         return user;
       }
     }
