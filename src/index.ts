@@ -8,6 +8,7 @@ import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { __prod__ } from './constants';
 import { ContextType } from './types';
+import cors from 'cors';
 
 declare module 'express-session' {
   interface Session {
@@ -17,6 +18,13 @@ declare module 'express-session' {
 
 const main = async () => {
   const app = express();
+
+  app.use(
+    cors({
+      origin: 'http://localhost:3000',
+      credentials: true,
+    })
+  );
 
   const RedisStore = connectRedis(session);
   const redisClient = redis.createClient();
@@ -47,7 +55,7 @@ const main = async () => {
 
   await server.start();
 
-  server.applyMiddleware({ app });
+  server.applyMiddleware({ app, cors: false });
 
   mongoose
     .connect(
