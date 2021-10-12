@@ -34,13 +34,17 @@ export class UserResolver {
   }
 
   @Mutation(() => User)
-  async register(@Arg('input') input: RegisterInput): Promise<User> {
+  async register(
+    @Arg('input') input: RegisterInput,
+    @Ctx() { req }: ContextType
+  ): Promise<User> {
     const { username, password } = input;
     if (password.length < 9)
       throw new UserInputError('Password length must be greater than 8');
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await UserModel.create({ username, password: hashedPassword });
+    req.session.userId = user.id;
     return user;
   }
 
