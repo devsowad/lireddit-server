@@ -11,6 +11,7 @@ import bcrypt from 'bcrypt';
 import { User, UserModel } from '../model/User';
 import { AuthenticationError, UserInputError } from 'apollo-server-errors';
 import { ContextType } from '../types';
+import { COOKIE_NAME } from '../constants';
 
 @InputType()
 class RegisterInput {
@@ -24,7 +25,6 @@ class RegisterInput {
 export class UserResolver {
   @Query(() => User)
   async me(@Ctx() { req }: ContextType) {
-    console.log(req.session);
     const userId = req.session.userId;
     if (userId) {
       const user = UserModel.findById(userId);
@@ -63,5 +63,15 @@ export class UserResolver {
       }
     }
     throw new UserInputError('Enter valid credentials');
+  }
+
+  @Mutation(() => Boolean)
+  logout(@Ctx() { req, res }: ContextType) {
+    req.session.destroy((err) => {
+      if (err) console.log(err);
+      return false;
+    });
+    res.clearCookie(COOKIE_NAME);
+    return true;
   }
 }
