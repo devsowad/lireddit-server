@@ -9,6 +9,10 @@ export class User extends BaseModel {
   @Field()
   username: string;
 
+  @prop({ required: [true, required()], unique: true })
+  @Field()
+  email: string;
+
   @prop({ required: [true, required()] })
   readonly password: string;
 }

@@ -6,7 +6,7 @@ import session from 'express-session';
 import connectRedis from 'connect-redis';
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
-import { COOKIE_NAME, __prod__ } from './constants';
+import { COOKIE_NAME, CORS_ORIGIN, __prod__ } from './constants';
 import { ContextType } from './types';
 import cors from 'cors';
 
@@ -20,10 +20,8 @@ const main = async () => {
   const app = express();
 
   app.use(
-    // FIXME: adding origin
     cors({
-      origin: 'http://localhost:3000',
-      // origin: '*',
+      origin: CORS_ORIGIN,
       credentials: true,
     })
   );

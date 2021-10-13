@@ -1,6 +1,7 @@
 import { Post, PostModel } from '../model/Post';
 import { Arg, Mutation, Query, Resolver } from 'type-graphql';
 import { validObjectId, existsThanReturn } from '../validation/input';
+import { CreatePostInput } from '../graphql/type/post/CreatePostInput';
 
 @Resolver()
 export class PostResolver {
@@ -18,8 +19,7 @@ export class PostResolver {
 
   @Mutation(() => Post)
   async createPost(
-    @Arg('title') title: string,
-    @Arg('body') body: string
+    @Arg('input') { title, body }: CreatePostInput
   ): Promise<Post> {
     const post = new PostModel({ title, body });
     return await post.save();
