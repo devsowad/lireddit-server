@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import mongoose from 'mongoose';
 import { getSchema } from './graphql/schema';
-import redis from 'redis';
+import Redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import express from 'express';
@@ -29,12 +29,12 @@ const main = async () => {
   );
 
   const RedisStore = connectRedis(session);
-  const redisClient = redis.createClient();
+  const redis = new Redis();
   app.use(
     session({
       name: COOKIE_NAME,
       store: new RedisStore({
-        client: redisClient,
+        client: redis,
         disableTouch: true,
       }),
       cookie: {
@@ -52,7 +52,7 @@ const main = async () => {
   const schema = await getSchema();
   const server = new ApolloServer({
     schema,
-    context: ({ req, res }): ContextType => ({ req, res }),
+    context: ({ req, res }): ContextType => ({ req, res, redis }),
   });
 
   await server.start();
