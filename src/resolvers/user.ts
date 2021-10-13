@@ -1,9 +1,21 @@
 import { AuthenticationError, UserInputError } from 'apollo-server-errors';
 import bcrypt from 'bcrypt';
-import { Arg, Ctx, Mutation, Query, Resolver } from 'type-graphql';
+import {
+  Arg,
+  Ctx,
+  FieldResolver,
+  Mutation,
+  Query,
+  Resolver,
+  Root,
+} from 'type-graphql';
 import { v4 as uuid } from 'uuid';
 import { COOKIE_NAME, FORGOT_PASSWORD_PREFIX } from '../constants';
+import { ChangePasswordInput } from '../graphql/type/user/ChangePasswordInput';
+import { LoginInput } from '../graphql/type/user/LoginInput';
+import { RegisterInput } from '../graphql/type/user/RegisterInput';
 import { sendMail } from '../mail/send';
+import { Post, PostModel } from '../model/Post';
 import { User, UserModel } from '../model/User';
 import { ContextType } from '../types';
 import {
@@ -11,15 +23,12 @@ import {
   validatePassword,
   validatePasswordAndConfirm,
 } from '../validation/auth';
-import { ChangePasswordInput } from '../graphql/type/user/ChangePasswordInput';
-import { RegisterInput } from '../graphql/type/user/RegisterInput';
-import { LoginInput } from '../graphql/type/user/LoginInput';
 
 const hashPassword = async (password: string) => {
   return await bcrypt.hash(password, 10);
 };
 
-@Resolver()
+@Resolver(() => User)
 export class UserResolver {
   @Query(() => User)
   async me(@Ctx() { req }: ContextType) {
@@ -120,5 +129,10 @@ export class UserResolver {
       }
     }
     throw new UserInputError('Invalid token');
+  }
+
+  @FieldResolver()
+  async posts(@Root() { _doc: user }: { _doc: User }): Promise<[Post] | any> {
+    return await PostModel.find({ author: user._id });
   }
 }

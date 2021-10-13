@@ -9,6 +9,8 @@ import uniqueValidator from 'mongoose-unique-validator';
 @plugin(uniqueValidator)
 @ObjectType()
 export class BaseModel {
+  readonly _id: string;
+
   @Field()
   readonly id: string;
 
