@@ -1,21 +1,25 @@
 import { Post, PostModel } from '../model/Post';
 import {
   Arg,
+  Ctx,
   FieldResolver,
   Mutation,
   Query,
   Resolver,
   Root,
+  UseMiddleware,
 } from 'type-graphql';
 import { validObjectId, existsThanReturn } from '../validation/input';
 import { CreatePostInput } from '../graphql/type/post/CreatePostInput';
 import { User, UserModel } from '../model/User';
+import { IsAuth } from '../graphql/middleware/isAuth';
+import { ContextType } from '../types';
 
 @Resolver(() => Post)
 export class PostResolver {
   @Query(() => [Post])
   async posts(): Promise<Post[]> {
-    return await PostModel.find();
+    return await PostModel.find().sort({ createdAt: -1 });
   }
 
   @Query(() => Post, { nullable: true })
@@ -26,13 +30,15 @@ export class PostResolver {
   }
 
   @Mutation(() => Post)
+  @UseMiddleware(IsAuth)
   async createPost(
-    @Arg('input') { title, body }: CreatePostInput
+    @Arg('input') { title, body }: CreatePostInput,
+    @Ctx() { req }: ContextType
   ): Promise<Post> {
     const post = new PostModel({
       title,
       body,
-      author: '6166bba06cdd491d06abd4ad',
+      author: req.session.userId,
     });
     return await post.save();
   }
