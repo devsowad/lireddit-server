@@ -6,6 +6,10 @@ import uniqueValidator from 'mongoose-unique-validator';
   // @ts-ignore
   this._update.updatedAt = new Date().toISOString();
 })
+@pre<BaseModel>('save', function () {
+  this.createdAt = new Date().toISOString();
+  this.updatedAt = new Date().toISOString();
+})
 @plugin(uniqueValidator)
 @ObjectType()
 export class BaseModel {
@@ -14,11 +18,11 @@ export class BaseModel {
   @Field()
   readonly id: string;
 
-  @prop({ default: new Date().toISOString() })
+  @prop()
   @Field()
-  readonly createdAt: string;
+  public createdAt: string;
 
-  @prop({ default: new Date().toISOString() })
+  @prop()
   @Field()
   public updatedAt: string;
 }
