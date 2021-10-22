@@ -135,4 +135,15 @@ export class UserResolver {
   async posts(@Root() { _doc: user }: { _doc: User }): Promise<[Post] | any> {
     return await PostModel.find({ author: user._id });
   }
+
+  @FieldResolver()
+  email(
+    @Root() { _doc: user }: { _doc: User },
+    @Ctx() { req }: ContextType
+  ): string {
+    if (user._id.toString() === req.session.userId) {
+      return user.email;
+    }
+    return '';
+  }
 }
