@@ -1,25 +1,48 @@
-import { Post, PostModel } from '../model/Post';
 import {
   Arg,
   Ctx,
+  Field,
   FieldResolver,
+  Int,
   Mutation,
+  ObjectType,
   Query,
   Resolver,
   Root,
   UseMiddleware,
 } from 'type-graphql';
-import { validObjectId, existsThanReturn } from '../validation/input';
-import { CreatePostInput } from '../graphql/type/post/CreatePostInput';
-import { User, UserModel } from '../model/User';
 import { IsAuth } from '../graphql/middleware/isAuth';
+import { CreatePostInput } from '../graphql/type/post/CreatePostInput';
+import { Post, PostModel } from '../model/Post';
+import { User, UserModel } from '../model/User';
 import { ContextType } from '../types';
+import { existsThanReturn, validObjectId } from '../validation/input';
+
+@ObjectType()
+class PaginatedPost {
+  @Field(() => [Post])
+  posts: Post[];
+  @Field(() => Boolean)
+  hasMore: boolean;
+}
 
 @Resolver(() => Post)
 export class PostResolver {
-  @Query(() => [Post])
-  async posts(): Promise<Post[]> {
-    return await PostModel.find().sort({ createdAt: -1 });
+  @Query(() => PaginatedPost)
+  async posts(
+    @Arg('limit', () => Int) limit: number,
+    @Arg('cursor', () => String, { nullable: true }) cursor: string
+  ): Promise<PaginatedPost> {
+    const posts = await PostModel.find(
+      cursor ? { createdAt: { $lt: cursor } } : {}
+    )
+      .limit(limit + 1)
+      .sort({ createdAt: -1 });
+
+    return {
+      posts: posts.slice(0, limit),
+      hasMore: posts.length === limit + 1,
+    };
   }
 
   @Query(() => Post, { nullable: true })
