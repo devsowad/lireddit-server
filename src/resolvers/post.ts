@@ -46,9 +46,8 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  async post(@Arg('id') id: string): Promise<Post> {
-    validObjectId(id);
-    const post = await PostModel.findById(id);
+  async post(@Arg('slug') slug: string): Promise<Post> {
+    const post = await PostModel.findOne({ slug });
     return existsThanReturn(post, 'Post not found');
   }
 
@@ -62,6 +61,7 @@ export class PostResolver {
       title,
       body,
       author: req.session.userId,
+      slug: title,
     });
     return await post.save();
   }
@@ -75,7 +75,7 @@ export class PostResolver {
     validObjectId(id);
     const post = await PostModel.findByIdAndUpdate(
       id,
-      { title, body },
+      { title, body, slug: title },
       { new: true, runValidators: true }
     );
     return existsThanReturn(post, 'Post not found');
