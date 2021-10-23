@@ -15,6 +15,7 @@ import { IsAuth } from '../graphql/middleware/isAuth';
 import { CreatePostInput } from '../graphql/type/post/CreatePostInput';
 import { Post, PostModel } from '../model/Post';
 import { User, UserModel } from '../model/User';
+import { Vote, VoteModel } from '../model/Vote';
 import { ContextType } from '../types';
 import { existsThanReturn, validObjectId } from '../validation/input';
 
@@ -91,5 +92,15 @@ export class PostResolver {
   @FieldResolver()
   async author(@Root() { _doc: post }: { _doc: Post }): Promise<User> {
     return (await UserModel.findById(post.author))!;
+  }
+
+  @FieldResolver(() => [Vote])
+  async likes(@Root() { _doc: post }: { _doc: Post }): Promise<Vote[]> {
+    return await VoteModel.find({ liked: true, postId: post._id });
+  }
+
+  @FieldResolver(() => [Vote])
+  async deslikes(@Root() { _doc: post }: { _doc: Post }): Promise<Vote[]> {
+    return await VoteModel.find({ liked: false, postId: post._id });
   }
 }
