@@ -14,7 +14,7 @@ import {
 import { IsAuth } from '../graphql/middleware/isAuth';
 import { CreatePostInput } from '../graphql/type/post/CreatePostInput';
 import { Post, PostModel } from '../model/Post';
-import { User, UserModel } from '../model/User';
+import { User } from '../model/User';
 import { Vote, VoteModel } from '../model/Vote';
 import { ContextType } from '../types';
 import { existsThanReturn, validObjectId } from '../validation/input';
@@ -104,8 +104,12 @@ export class PostResolver {
   }
 
   @FieldResolver()
-  async author(@Root() { _doc: post }: { _doc: Post }): Promise<User> {
-    return (await UserModel.findById(post.author))!;
+  async author(
+    @Root() { _doc: post }: { _doc: Post },
+    @Ctx() { userLoader }: ContextType
+  ): Promise<User> {
+    const users = await userLoader.load(post.author);
+    return users;
   }
 
   @FieldResolver(() => [Vote])

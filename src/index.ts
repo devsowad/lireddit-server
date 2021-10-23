@@ -1,14 +1,15 @@
-import 'reflect-metadata';
-import mongoose from 'mongoose';
-import { getSchema } from './graphql/schema';
-import Redis from 'ioredis';
-import session from 'express-session';
-import connectRedis from 'connect-redis';
-import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
-import { COOKIE_NAME, CORS_ORIGIN, __prod__ } from './constants';
-import { ContextType } from './types';
+import connectRedis from 'connect-redis';
 import cors from 'cors';
+import express from 'express';
+import session from 'express-session';
+import Redis from 'ioredis';
+import mongoose from 'mongoose';
+import 'reflect-metadata';
+import { COOKIE_NAME, CORS_ORIGIN, __prod__ } from './constants';
+import { createUserLoader } from './dataloader/createUserLoader';
+import { getSchema } from './graphql/schema';
+import { ContextType } from './types';
 
 declare module 'express-session' {
   interface Session {
@@ -50,7 +51,12 @@ const main = async () => {
   const schema = await getSchema();
   const server = new ApolloServer({
     schema,
-    context: ({ req, res }): ContextType => ({ req, res, redis }),
+    context: ({ req, res }): ContextType => ({
+      req,
+      res,
+      redis,
+      userLoader: createUserLoader(),
+    }),
   });
 
   await server.start();
@@ -63,6 +69,7 @@ const main = async () => {
     )
     .then(() => {
       console.log('mongodb connected');
+      if (!__prod__) mongoose.set('debug', true);
       const port = process.env.PORT || 5000;
       app.listen({ port }, () =>
         console.log(
