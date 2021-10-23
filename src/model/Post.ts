@@ -4,6 +4,7 @@ import { Field, ObjectType } from 'type-graphql';
 import { required } from '../validation/message';
 import { BaseModel } from './BaseModel';
 import { User } from './User';
+import { VoteModel } from './Vote';
 
 @pre<Post>('findOneAndUpdate', function (this) {
   // @ts-ignore
@@ -11,6 +12,10 @@ import { User } from './User';
 })
 @pre<Post>('save', function () {
   this.slug = slugify(this.slug);
+})
+@pre<Post>('deleteOne', async function () {
+  // @ts-ignore
+  await VoteModel.deleteMany({ postId: this._conditions._id });
 })
 @ObjectType()
 export class Post extends BaseModel {

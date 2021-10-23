@@ -82,11 +82,18 @@ export class PostResolver {
     return existsThanReturn(post, 'Post not found');
   }
 
-  @Mutation(() => Post)
-  async deletePost(@Arg('id') id: string): Promise<Post> {
+  @Mutation(() => Boolean)
+  @UseMiddleware([IsAuth])
+  async deletePost(
+    @Arg('id') id: string,
+    @Ctx() { req }: ContextType
+  ): Promise<boolean> {
     validObjectId(id);
-    const post = await PostModel.findByIdAndDelete(id);
-    return existsThanReturn(post, 'Post not found');
+    await PostModel.deleteOne({
+      _id: id,
+      author: req.session.userId,
+    });
+    return true;
   }
 
   @FieldResolver()
