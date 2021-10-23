@@ -47,8 +47,14 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  async post(@Arg('slug') slug: string): Promise<Post> {
-    const post = await PostModel.findOne({ slug });
+  async post(
+    @Arg('slug') slug: string,
+    @Arg('onEdit', () => Boolean, { nullable: true }) onEdit: boolean,
+    @Ctx() { req }: ContextType
+  ): Promise<Post> {
+    const filter = onEdit ? { slug, author: req.session.userId } : { slug };
+
+    const post = await PostModel.findOne(filter);
     return existsThanReturn(post, 'Post not found');
   }
 
@@ -70,12 +76,13 @@ export class PostResolver {
   @Mutation(() => Post)
   async updatePost(
     @Arg('id') id: string,
-    @Arg('title', () => String, { nullable: true }) title: string,
-    @Arg('body', () => String, { nullable: true }) body: string
+    @Arg('title') title: string,
+    @Arg('body') body: string,
+    @Ctx() { req }: ContextType
   ): Promise<Post> {
     validObjectId(id);
-    const post = await PostModel.findByIdAndUpdate(
-      id,
+    const post = await PostModel.findOneAndUpdate(
+      { _id: id, author: req.session.userId },
       { title, body, slug: title },
       { new: true, runValidators: true }
     );

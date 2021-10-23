@@ -8,10 +8,10 @@ import { VoteModel } from './Vote';
 
 @pre<Post>('findOneAndUpdate', function (this) {
   // @ts-ignore
-  this._update.slug = slugify(this._update.slug);
+  this._update.slug = slugify(this._update.slug, { lower: true });
 })
 @pre<Post>('save', function () {
-  this.slug = slugify(this.slug);
+  this.slug = slugify(this.slug, { lower: true });
 })
 @pre<Post>('deleteOne', async function () {
   // @ts-ignore
