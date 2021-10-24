@@ -15,7 +15,7 @@ import { ChangePasswordInput } from '../graphql/type/user/ChangePasswordInput';
 import { LoginInput } from '../graphql/type/user/LoginInput';
 import { RegisterInput } from '../graphql/type/user/RegisterInput';
 import { sendMail } from '../mail/send';
-import { Post, PostModel } from '../model/Post';
+import { Post } from '../model/Post';
 import { User, UserModel } from '../model/User';
 import { ContextType } from '../types';
 import {
@@ -132,8 +132,11 @@ export class UserResolver {
   }
 
   @FieldResolver()
-  async posts(@Root() { _doc: user }: { _doc: User }): Promise<[Post] | any> {
-    return await PostModel.find({ author: user._id });
+  async posts(
+    @Root() { _doc: user }: { _doc: User },
+    @Ctx() { postLoader }: ContextType
+  ): Promise<[Post] | any> {
+    return await postLoader.load(user._id);
   }
 
   @FieldResolver()

@@ -1,37 +1,26 @@
 import {
   Arg,
   Ctx,
-  Field,
   FieldResolver,
   Mutation,
-  ObjectType,
   Resolver,
   Root,
   UseMiddleware,
 } from 'type-graphql';
 import { IsAuth } from '../graphql/middleware/isAuth';
-import { User, UserModel } from '../model/User';
+import { User } from '../model/User';
 import { Vote, VoteModel } from '../model/Vote';
 import { ContextType } from '../types';
 
-@ObjectType()
-class Votes {
-  @Field(() => [Vote])
-  likes: Vote[];
-
-  @Field(() => [Vote])
-  deslikes: Vote[];
-}
-
 @Resolver(() => Vote)
 export class VoteResolver {
-  @Mutation(() => Votes)
+  @Mutation(() => [Vote])
   @UseMiddleware(IsAuth)
   async vote(
     @Arg('postId') postId: string,
     @Arg('liked') liked: boolean,
     @Ctx() { req }: ContextType
-  ): Promise<Votes> {
+  ): Promise<Vote[]> {
     const { userId } = req.session;
 
     const vote = await VoteModel.findOne({ postId, userId });
@@ -49,15 +38,14 @@ export class VoteResolver {
       });
     }
 
-    const votes = await VoteModel.find({ postId: postId });
-    return {
-      likes: votes.filter((v) => v.liked === true),
-      deslikes: votes.filter((v) => v.liked === false),
-    };
+    return await VoteModel.find({ postId: postId });
   }
 
   @FieldResolver(() => User)
-  async author(@Root() { _doc: vote }: { _doc: Vote }): Promise<User> {
-    return (await UserModel.findById(vote.userId))!;
+  async user(
+    @Root() { _doc: vote }: { _doc: Vote },
+    @Ctx() { userLoader }: ContextType
+  ): Promise<User> {
+    return await userLoader.load(vote.userId);
   }
 }

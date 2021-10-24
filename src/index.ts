@@ -7,7 +7,9 @@ import Redis from 'ioredis';
 import mongoose from 'mongoose';
 import 'reflect-metadata';
 import { COOKIE_NAME, CORS_ORIGIN, __prod__ } from './constants';
+import { createPostLoader } from './dataloader/createPostLoader';
 import { createUserLoader } from './dataloader/createUserLoader';
+import { createVoteLoader } from './dataloader/createVoteLoader';
 import { getSchema } from './graphql/schema';
 import { ContextType } from './types';
 
@@ -56,6 +58,8 @@ const main = async () => {
       res,
       redis,
       userLoader: createUserLoader(),
+      voteLoader: createVoteLoader(),
+      postLoader: createPostLoader(),
     }),
   });
 
