@@ -1,3 +1,4 @@
+import { UserInputError } from 'apollo-server-errors';
 import {
   Arg,
   Ctx,
@@ -17,7 +18,11 @@ import { Post, PostModel } from '../model/Post';
 import { User } from '../model/User';
 import { Vote } from '../model/Vote';
 import { ContextType } from '../types';
+import { uploadFile } from '../utils/uploadFile';
 import { existsThanReturn, validObjectId } from '../validation/input';
+import cloudinary from 'cloudinary';
+import { FileUpload } from 'graphql-upload';
+import { UpdatePostInput } from '../graphql/type/post/updatePostInput';
 
 @ObjectType()
 class PaginatedPost {
@@ -61,31 +66,50 @@ export class PostResolver {
   @Mutation(() => Post)
   @UseMiddleware(IsAuth)
   async createPost(
-    @Arg('input') { title, body }: CreatePostInput,
+    @Arg('input') { title, body, file }: CreatePostInput,
     @Ctx() { req }: ContextType
   ): Promise<Post> {
-    const post = new PostModel({
-      title,
-      body,
-      author: req.session.userId,
-      slug: title,
-    });
-    return await post.save();
+    try {
+      const post = new PostModel({
+        title,
+        body,
+        author: req.session.userId,
+        slug: title,
+      });
+      const image = await uploadImage(file);
+      post.imageUrl = image.secure_url;
+      post.imagePublicId = image.public_id;
+
+      return await post.save();
+    } catch (error) {
+      throw new UserInputError(error.message);
+    }
   }
 
   @Mutation(() => Post)
   async updatePost(
-    @Arg('id') id: string,
-    @Arg('title') title: string,
-    @Arg('body') body: string,
+    @Arg('input') { id, title, body, file }: UpdatePostInput,
     @Ctx() { req }: ContextType
   ): Promise<Post> {
     validObjectId(id);
-    const post = await PostModel.findOneAndUpdate(
+    let post = await PostModel.findOneAndUpdate(
       { _id: id, author: req.session.userId },
-      { title, body, slug: title },
+      {
+        title,
+        body,
+        slug: title,
+      },
       { new: true, runValidators: true }
     );
+    if (post && file) {
+      const image = await uploadImage(file);
+      await deleteImage(post?.imagePublicId);
+      post = await PostModel.findOneAndUpdate(
+        { _id: id, author: req.session.userId },
+        { imageUrl: image?.secure_url, imagePublicId: image?.public_id },
+        { new: true }
+      );
+    }
     return existsThanReturn(post, 'Post not found');
   }
 
@@ -96,10 +120,11 @@ export class PostResolver {
     @Ctx() { req }: ContextType
   ): Promise<boolean> {
     validObjectId(id);
-    await PostModel.deleteOne({
+    const post = await PostModel.findOneAndDelete({
       _id: id,
       author: req.session.userId,
     });
+    await deleteImage(post?.imagePublicId);
     return true;
   }
 
@@ -120,3 +145,17 @@ export class PostResolver {
     return await voteLoader.load(post._id);
   }
 }
+
+const deleteImage = async (publicId?: string) => {
+  if (publicId) {
+    await cloudinary.v2.uploader.destroy(publicId);
+  }
+};
+
+const uploadImage = async (file: FileUpload) => {
+  return await await uploadFile(file, {
+    allowed_formats: ['jpeg', 'png'],
+    folder: 'poster',
+    unique_filename: true,
+  });
+};

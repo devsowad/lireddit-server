@@ -12,6 +12,11 @@ import { createUserLoader } from './dataloader/createUserLoader';
 import { createVoteLoader } from './dataloader/createVoteLoader';
 import { getSchema } from './graphql/schema';
 import { ContextType } from './types';
+import { graphqlUploadExpress } from 'graphql-upload';
+import dotenv from 'dotenv';
+import cloudinary from 'cloudinary';
+
+dotenv.config();
 
 declare module 'express-session' {
   interface Session {
@@ -20,6 +25,12 @@ declare module 'express-session' {
 }
 
 const main = async () => {
+  cloudinary.v2.config({
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  });
+
   const app = express();
 
   app.use(
@@ -49,6 +60,8 @@ const main = async () => {
       resave: false,
     })
   );
+
+  app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
 
   const schema = await getSchema();
   const server = new ApolloServer({

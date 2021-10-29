@@ -8,7 +8,10 @@ import { VoteModel } from './Vote';
 
 @pre<Post>('findOneAndUpdate', function (this) {
   // @ts-ignore
-  this._update.slug = slugify(this._update.slug, { lower: true });
+  if (this._update.slug) {
+    // @ts-ignore
+    this._update.slug = slugify(this._update.slug, { lower: true });
+  }
 })
 @pre<Post>('save', function () {
   this.slug = slugify(this.slug, { lower: true });
@@ -34,6 +37,13 @@ export class Post extends BaseModel {
   @prop({ required: true })
   @Field(() => User)
   author: string;
+
+  @prop()
+  @Field()
+  imageUrl: string;
+
+  @prop()
+  imagePublicId: string;
 }
 
 export const PostModel = getModelForClass(Post);
