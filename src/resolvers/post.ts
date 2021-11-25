@@ -23,6 +23,7 @@ import { existsThanReturn, validObjectId } from '../validation/input';
 import cloudinary from 'cloudinary';
 import { FileUpload } from 'graphql-upload';
 import { UpdatePostInput } from '../graphql/type/post/updatePostInput';
+import { Comment, CommentModel } from '../model/Comment';
 
 @ObjectType()
 class PaginatedPost {
@@ -133,8 +134,7 @@ export class PostResolver {
     @Root() { _doc: post }: { _doc: Post },
     @Ctx() { userLoader }: ContextType
   ): Promise<User> {
-    const users = await userLoader.load(post.author);
-    return users;
+    return await userLoader.load(post.author);
   }
 
   @FieldResolver(() => [Vote], { nullable: true })
@@ -143,6 +143,19 @@ export class PostResolver {
     @Ctx() { voteLoader }: ContextType
   ): Promise<Vote[]> {
     return await voteLoader.load(post._id);
+  }
+
+  @FieldResolver(() => [Comment], { nullable: true })
+  async comments(
+    @Root() { _doc: post }: { _doc: Post },
+    @Ctx() { commentLoader }: ContextType
+  ): Promise<Comment[]> {
+    return await commentLoader.load(post._id);
+  }
+
+  @FieldResolver(() => Int)
+  async commentsCount(@Root() { _doc: post }: { _doc: Post }) {
+    return await CommentModel.find({ postId: post._id }).count();
   }
 }
 

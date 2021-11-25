@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
+import { createCommentLoader } from '../dataloader/createCommentLoader';
 import { createPostLoader } from '../dataloader/createPostLoader';
 import { createUserLoader } from '../dataloader/createUserLoader';
 import { createVoteLoader } from '../dataloader/createVoteLoader';
@@ -11,4 +12,5 @@ export type ContextType = {
   userLoader: ReturnType<typeof createUserLoader>;
   voteLoader: ReturnType<typeof createVoteLoader>;
   postLoader: ReturnType<typeof createPostLoader>;
+  commentLoader: ReturnType<typeof createCommentLoader>;
 };

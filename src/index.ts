@@ -15,6 +15,7 @@ import { ContextType } from './types';
 import { graphqlUploadExpress } from 'graphql-upload';
 import dotenv from 'dotenv';
 import cloudinary from 'cloudinary';
+import { createCommentLoader } from './dataloader/createCommentLoader';
 
 dotenv.config();
 
@@ -73,6 +74,7 @@ const main = async () => {
       userLoader: createUserLoader(),
       voteLoader: createVoteLoader(),
       postLoader: createPostLoader(),
+      commentLoader: createCommentLoader(),
     }),
   });
 
